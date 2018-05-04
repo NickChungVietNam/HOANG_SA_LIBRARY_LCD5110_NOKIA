@@ -2,6 +2,9 @@
 
 /*
 
+// cập nhật ngày 4/5/2018 (Thái Sơn)
+// fix lỗi thiếu kí tự 0 trong hàm Number_Float
+
 PCD8544 _NOKIA5110 LCD library!
 
 Copyright (C) 2016 SON
@@ -244,7 +247,7 @@ if((goc==0)||(goc==90)){
 
 void  PCD8544::Asc_Char(int16_t x1, int16_t y1,unsigned char c PROGMEM, bool color) {
 bool non=!color;
-const char* dress =font+c*5;
+const unsigned char* dress =font+c*5;
   for (byte i =0; i<5; i++ ) {
   for (byte j =0; j<8; j++ ) {
 
@@ -350,7 +353,7 @@ int16_t x=x1;
 void  PCD8544::draw_single_number(int16_t x1, int16_t y1,byte single_number, byte select_font,bool color) {
 //SET_SIZE(select_font);// chọn cỡ chữ theo font
 bool non=!color;
-char *ADRESS PROGMEM;
+const unsigned char *ADRESS PROGMEM;
 switch (select_font){
 case 1:
 ADRESS=casio_number;
@@ -453,7 +456,8 @@ x-=font_w;// dịch con trỏ sang trái  sau mỗi lần ghi
 void PCD8544::Number_Float(int16_t x, int16_t y, float a,byte n, byte select_font,bool color){
 
 
- SET_SIZE(select_font);// chọn cỡ chữ theo font
+
+ SET_SIZE(select_font);// chọn font
  if(a==0){
 
 draw_single_number(x,y,0,select_font,color);
@@ -464,7 +468,7 @@ return;
 float sau;// 
 unsigned long b1,b2; // để lưu trong tính toán
 byte du ;// 1 số dư du
-byte x2; // tọa độ thực tế của con trỏ
+
 if (a<0){
  // nếu a<0 thì đổi dấu
 a=(-1)*a;
@@ -484,12 +488,24 @@ while(b1>9){
 x+=denta_x;// VẼ TỪ PHẢI SANG TRÁI
 
 
-while( b2>0){
+
+
+
+
+do{
+if( b2>0){
+  
 du=b2%10; // lấy phần dư hàng đơn vị
 draw_single_number(x,y,du,select_font,color);
+
 b2=((b2-du)/10); // kết thúc b2=0
-x-=font_w;//dịch con trỏ sang trái sau mỗi lần ghi
+}else{
+  
+draw_single_number(x,y,0,select_font,color);
 }
+x-=font_w;//dịch con trỏ sang trái sau mỗi lần ghi
+}while( b2>0);
+
 // //////////////////kết thúc phần trước dấu phảy
 x+=denta_x+2+font_w*2;
 //vẽ dấu phẩy cách đằng trước và sau 2 pixel
@@ -503,14 +519,23 @@ b2=(unsigned long)d_sau;
 x+=((n-1)*font_w);//dịch con trỏ sang phải 
 
 
-while( b2>0){
+
+byte count_stop=(byte)n;
+do{
+ 
+ if(b2>0){
+
 du=b2%10; // lấy phần dư hàng đơn vị
-
 draw_single_number(x,y,du,select_font,color);
-b2=((b2-du)/10); // kết thúc b2=0
-x-=font_w;//dịch con trỏ sang trái sau mỗi lần ghi
 
-}
+b2=((b2-du)/10); // kết thúc b2=0
+ }else{
+   
+draw_single_number(x,y,0,select_font,color);
+ }
+x-=font_w;//dịch con trỏ sang trái sau mỗi lần ghi
+count_stop--;
+}while( b2>0 || count_stop >0);
 
 
 }
@@ -1801,10 +1826,13 @@ void PCD8544::Clear(void) {
     }
   }
 
-//b1.1: xóa vùng ảnh cũ
 
-  for(int16_t x=x0;x<w0+x0; x++){
-    for(int16_t y=y0; y<h0+y0; y++){
+//b1.1: xóa vùng ảnh cũ
+  // fix : 5/4/2018 : thái sơn
+int16_t w0_x0=(int16_t)( w0+x0);
+int16_t  h0_y0=(int16_t )(h0+y0);
+  for(int16_t x=(int16_t)x0;x<w0_x0; x++){
+    for(int16_t y=(int16_t)y0; y< h0_y0; y++){
       my_drawpixel(x,y,WHITE);
     }
   }
@@ -1965,6 +1993,8 @@ x-=font_w*he_so_phong_to;// dịch con trỏ sang trái  sau mỗi lần ghi
 
 void PCD8544::Number_Float(int16_t x, int16_t y, float a,byte n, byte select_font,byte 
  he_so_phong_to, bool color){
+
+
 if(  he_so_phong_to==1){
 Number_Float(x,y, a,n, select_font,color);
   return;// thoát
@@ -1983,7 +2013,7 @@ return;
 float sau;// 
 unsigned long b1,b2; // để lưu trong tính toán
 byte du ;// 1 số dư du
-byte x2; // tọa độ thực tế của con trỏ
+
 if (a<0){
  // nếu a<0 thì đổi dấu
 a=(-1)*a;
@@ -2005,14 +2035,30 @@ while(b1>9){
 x+=denta_x;// VẼ TỪ PHẢI SANG TRÁI
 
 
-while( b2>0){
+
+
+
+do{
+if( b2>0){
+  
 du=b2%10; // lấy phần dư hàng đơn vị
 draw_single_number(x,y,du,select_font,color);
 
-phong_to( x,y, Font_width, Font_high, he_so_phong_to,color);
 b2=((b2-du)/10); // kết thúc b2=0
-x-=font_w*he_so_phong_to;//dịch con trỏ sang trái sau mỗi lần ghi
+}else{
+  
+draw_single_number(x,y,0,select_font,color);
 }
+
+phong_to( x,y, Font_width, Font_high, he_so_phong_to,color);
+
+x-=font_w*he_so_phong_to;//dịch con trỏ sang trái sau mỗi lần ghi
+}while( b2>0);
+
+
+
+
+
 // //////////////////kết thúc phần trước dấu phảy
 x+=denta_x+(2+font_w*2)*he_so_phong_to;
 //vẽ dấu phẩy cách đằng trước và sau 2 pixel
@@ -2028,15 +2074,32 @@ b2=(unsigned long)d_sau;
 x+=((n-1)*font_w)*he_so_phong_to;//dịch con trỏ sang phải 
 
 
-while( b2>0){
+
+
+
+
+byte count_stop=n;// số ký tự hiển thị sau dấu phảy
+do{
+ 
+ if(b2>0){
+
 du=b2%10; // lấy phần dư hàng đơn vị
-
 draw_single_number(x,y,du,select_font,color);
-phong_to( x,y, Font_width, Font_high, he_so_phong_to,color);
-b2=((b2-du)/10); // kết thúc b2=0
-x-=font_w*he_so_phong_to;//dịch con trỏ sang trái sau mỗi lần ghi
 
-}
+b2=((b2-du)/10); // kết thúc b2=0
+ }else{
+   
+draw_single_number(x,y,0,select_font,color);
+ }
+
+phong_to( x,y, Font_width, Font_high, he_so_phong_to,color);
+x-=font_w*he_so_phong_to;//dịch con trỏ sang trái sau mỗi lần ghi
+count_stop--;
+}while( b2>0 || count_stop >0);
+
+
+
+
 
 
 }
